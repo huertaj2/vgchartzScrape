@@ -2,13 +2,14 @@ from bs4 import BeautifulSoup, element
 import urllib
 import pandas as pd
 import numpy as np
+import datetime as dt
 
 pages = 19
 rec_count = 0
 rank = []
 gname = []
 platform = []
-year = []
+date = []
 genre = []
 critic_score = []
 user_score = []
@@ -76,16 +77,27 @@ for page in range(1, pages):
         sales_gl.append(
             float(data[8].string[:-1]) if
             not data[8].string.startswith("N/A") else np.nan)
-        release_year = data[13].string.split()[-1]
+        release_date = data[13].string.split()
+        #release year is now a list of date, month, 2-digit year, i.e. '25th', 'Jun', '19'
         # different format for year
-        if release_year.startswith('N/A'):
-            year.append('N/A')
+        if release_date[0] == 'N/A':
+            date.append('N/A')
         else:
-            if int(release_year) >= 80:
-                year_to_add = np.int32("19" + release_year)
+            day = release_date[0]
+            #remove th, st, nd, etc:
+            day = day[0:2]
+            year = release_date[2]
+            #format year as 4 digit number
+            if int(year) >= 80:
+                year = 1900 + int(year)
             else:
-                year_to_add = np.int32("20" + release_year)
-            year.append(year_to_add)
+                year = 2000 + int(year)
+            #turn pieces back into string
+            date_to_add = '{}/{}/{}'.format(day, release_date[1], year)
+            #format as datetime
+            d= dt.datetime.strptime(date_to_add, "%d/%b/%Y")
+            date.append(d)
+            
 
         # go to every individual website to get genre info
         url_to_game = tag.attrs['href']
@@ -108,7 +120,7 @@ columns = {
     'Rank': rank,
     'Name': gname,
     'Platform': platform,
-    'Year': year,
+    'Date': date,
     'Genre': genre,
     'Critic_Score': critic_score,
     'User_Score': user_score,
@@ -124,7 +136,7 @@ print(rec_count)
 df = pd.DataFrame(columns)
 print(df.columns)
 df = df[[
-    'Rank', 'Name', 'Platform', 'Year', 'Genre',
+    'Rank', 'Name', 'Platform', 'Date', 'Genre',
     'Publisher', 'Developer', 'Critic_Score', 'User_Score',
     'NA_Sales', 'PAL_Sales', 'JP_Sales', 'Other_Sales', 'Global_Sales']]
 df.to_csv("vgsales.csv", sep=",", encoding='utf-8', index=False)
