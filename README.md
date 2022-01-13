@@ -1,3 +1,5 @@
+This fork is slightly edited to pull full release dates, not years, and format them as datetime.
+
 vgchartzfull is a python script based on BeautifulSoup.
 It creates a dataset based on data from 
 http://www.vgchartz.com/gamedb/
